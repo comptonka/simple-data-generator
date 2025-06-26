@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Simple Data Generator for Elasticsearch Indices
 The purpose of this project is to ingest some sample data into Elasticsearch. If you have a model in mind, but aren't ready to build piplines in Logstash or deploy various Beats or write code to insert data into Elasticsearch, this project might help you.
 
@@ -102,3 +103,6 @@ Simply, you need the URL for your APM server and the token provided by APM.
 
 Additionally, there's a debug script runme_apm_debug.bash if things get confusing or not going smoothly.
 ```
+=======
+# simple-data-generator
+>>>>>>> b7e845cabb59d2603ee91bb7bb94196e08e35c14
