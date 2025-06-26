@@ -1,70 +1,49 @@
-#!/bin/bash 
-sudo apt update -y
-sudo apt install cowsay -y
-sudo apt install cmatrix -y
+#!/bin/bash
+set -euo pipefail
 
-# The line to add to ~/.bashrc
-line_to_add='export PATH=$PATH:/usr/games'
-
-# Check if the line already exists in .bashrc to avoid duplicates
-if ! grep -Fxq "$line_to_add" ~/.bashrc; then
-    # Append the line to the bottom of ~/.bashrc
-    echo "$line_to_add" >> ~/.bashrc
-    echo "Line added to ~/.bashrc"
-else
-    echo "Line already exists in ~/.bashrc"
+# Ensure root
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root or with sudo."
+  exit 1
 fi
 
-# Reload .bashrc to apply changes
-source ~/.bashrc
+export DEBIAN_FRONTEND=noninteractive
+export PATH=$PATH:/usr/games
 
+# Install dependencies
+apt-get update -y
+apt-get install -y curl gnupg lsb-release wget software-properties-common jq cowsay \
+  -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
-# Clear the screen
+# Display loading message
 clear
-
-# Run cmatrix in the background
-cmatrix -b -u 5 &
-
-# Get the process ID of cmatrix to stop it later
-MATRIX_PID=$!
-
-# Wait for 2 seconds to let cmatrix start
-sleep 2
-
-# Hide cursor
-tput civis
-
-# Get terminal dimensions
+tput civis || true
 rows=$(tput lines)
 cols=$(tput cols)
-
-# Center the message
 message="Loading, please stand by."
-message_length=${#message}
-center_col=$(( (cols - message_length) / 2 ))
+center_col=$(( (cols - ${#message}) / 2 ))
 center_row=$(( rows / 2 ))
-
-# Print the message in the center
-tput cup $center_row $center_col
+tput cup $center_row $center_col || true
 echo "$message" | cowsay
 
-# Wait for 8 seconds with the message displayed
-sleep 8
-
-# Kill cmatrix process
-kill $MATRIX_PID
-
-# Show cursor again and clear screen
-tput cnorm
+# Brief pause
+sleep 3
+tput cnorm || true
 clear
 
-
-
-
-echo "You took the red pill, now we will see how far the rabbit hole goes."
-echo 
-echo
-echo 
-echo
+# Display message and begin ingestion
+echo -e "\nYou took the red pill, now we will see how far the rabbit hole goes.\n"
 echo "Starting data ingestion, press CTRL + C to unplug from the Matrix."
-java -jar /root/simple-data-generator/build/libs/simple-data-generator-1.0.0-SNAPSHOT.jar /root/simple-data-generator/secops-windows.yml
+
+# Run the SDG jar
+JAR="/root/simple-data-generator/build/libs/simple-data-generator-1.0.0-SNAPSHOT.jar"
+YAML="/root/simple-data-generator/secops-windows.yml"
+
+if [[ -f "$JAR" && -f "$YAML" ]]; then
+  exec java -jar "$JAR" "$YAML"
+else
+  echo "❌ SDG JAR or YAML file not found. Check paths:"
+  echo "JAR:  $JAR"
+  echo "YAML: $YAML"
+  exit 1
+fi
