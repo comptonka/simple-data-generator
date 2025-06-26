@@ -2158,11 +2158,6 @@ echo
 echo "📦 Loading Elastic Detection Rules..."
 echo
 
-curl -X PUT "http://localhost:30001/api/detection_engine/rules/prepackaged" \
-     -u "sdg:changeme" \
-     -H "kbn-xsrf: true" \
-     -H "Content-Type: application/json" \
-     -d '{}'
 
 curl -X POST "http://localhost:30001/api/detection_engine/rules/_bulk_create" \
      -u "sdg:changeme" \
