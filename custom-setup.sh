@@ -2898,4 +2898,4 @@ sleep 2
 # Clear the screen
 clear
 
-bash simple-data-generator/custom-rdp.sh
+bash simple-data-generator/custom-setup-phishing.sh
