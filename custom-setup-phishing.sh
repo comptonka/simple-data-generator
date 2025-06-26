@@ -37,27 +37,37 @@ clear
 echo -e "\nYou took the red pill, now we will see how far the rabbit hole goes.\n"
 echo "Starting data ingestion, press CTRL + C to unplug from the Matrix."
 
-# Run both workloads
+# Run Windows workload, detect readiness, then continue to phishing
 JAR="/root/simple-data-generator/build/libs/simple-data-generator-1.0.0-SNAPSHOT.jar"
 WINDOWS_YAML="/root/simple-data-generator/secops-windows.yml"
 PHISHING_YAML="/root/simple-data-generator/secops-email.yml"
+LOG_FILE="/tmp/windows-sdg.log"
 
-if [[ -f "$JAR" ]]; then
-  if [[ -f "$WINDOWS_YAML" ]]; then
-    echo -e "\n▶ Running Windows workload..."
-    java -jar "$JAR" "$WINDOWS_YAML"
-  else
-    echo "❌ Missing $WINDOWS_YAML"
-  fi
+if [[ -f "$JAR" && -f "$WINDOWS_YAML" ]]; then
+  echo -e "\n▶ Starting Windows workload..."
+  java -jar "$JAR" "$WINDOWS_YAML" > "$LOG_FILE" 2>&1 &
+  WIN_PID=$!
 
-  if [[ -f "$PHISHING_YAML" ]]; then
-    echo -e "\n▶ Running Email Phishing workload..."
-    java -jar "$JAR" "$PHISHING_YAML"
-  else
-    echo "❌ Missing $PHISHING_YAML"
-  fi
+  echo "⏳ Waiting for 'Workloads Started' message..."
+
+  while sleep 1; do
+    if grep -q "Workloads Started" "$LOG_FILE"; then
+      echo "✅ 'Workloads Started' detected. Stopping Windows workload..."
+      kill $WIN_PID
+      wait $WIN_PID 2>/dev/null || true
+      break
+    fi
+  done
 else
-  echo "❌ SDG JAR file not found: $JAR"
+  echo "❌ Missing JAR or YAML for Windows workload."
   exit 1
 fi
 
+# Run phishing workload in foreground (leave it running)
+if [[ -f "$PHISHING_YAML" ]]; then
+  echo -e "\n▶ Starting Email Phishing workload (will run indefinitely)..."
+  exec java -jar "$JAR" "$PHISHING_YAML"
+else
+  echo "❌ Missing $PHISHING_YAML"
+  exit 1
+fi
